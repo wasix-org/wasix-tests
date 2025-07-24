@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 5
+# We need to use expect to be able to write to /dev/tty
+
+set cmd [lrange $argv 0 end]
+eval spawn $cmd
+
+# Wait for the password prompt
+expect "Enter password:"
+send "test123\r"
+expect {
+    "Password matches expected value." {
+        puts "✅ Password verified successfully."
+        exit 0
+    }
+    default {
+        puts "❌ Error: Expected confirmation message not received."
+        exit 1
+    }
+}
