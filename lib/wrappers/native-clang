@@ -1,11 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+NATIVE_COMPILER=""
+NATIVE_COMPILER_PATH=""
+function set_compiler_if_unset() {
+    local requested="$1"
+    if [ -n "$NATIVE_COMPILER_PATH" ]; then
+        # Already found native compiler
+        return
+    fi
+    NATIVE_COMPILER="$requested"
+
+    local compiler_path="$(command -v "$requested" || true)"
+    if test -n "$compiler_path"; then
+        NATIVE_COMPILER_PATH="$compiler_path"
+    fi
+}
+
 # Detect if we are clang or clang++
+# Also try to prefer a natively installed clang version
 if [[ "$0" =~ "++" ]]; then
-    NATIVE_COMPILER="clang++-19"
+    set_compiler_if_unset /usr/bin/clang++
+    set_compiler_if_unset clang++-21
+    set_compiler_if_unset clang++-20
+    set_compiler_if_unset clang++-19
+    set_compiler_if_unset clang++
 else
-    NATIVE_COMPILER="clang-19"
+    set_compiler_if_unset /usr/bin/clang
+    set_compiler_if_unset clang-21
+    set_compiler_if_unset clang-20
+    set_compiler_if_unset clang-19
+    set_compiler_if_unset clang
 fi
+
+test -n "$NATIVE_COMPILER_PATH" || { echo "$NATIVE_COMPILER not found in PATH" >&2; exit 1; }
+# Add the path where the native compiler was found as the highest priority path
+export PATH="$(dirname "$NATIVE_COMPILER_PATH"):$PATH"
 
 exec "$NATIVE_COMPILER" "$@"

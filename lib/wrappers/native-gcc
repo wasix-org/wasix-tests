@@ -8,4 +8,9 @@ else
     NATIVE_COMPILER="gcc"
 fi
 
+NATIVE_COMPILER_PATH=$(command -v "$NATIVE_COMPILER")
+test -n "$NATIVE_COMPILER_PATH" || { echo "$NATIVE_COMPILER not found in PATH" >&2; exit 1; }
+# Add the path where the native compiler was found as the highest priority path
+export PATH="$(dirname "$NATIVE_COMPILER_PATH"):$PATH"
+
 exec "$NATIVE_COMPILER" "$@"
