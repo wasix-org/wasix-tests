@@ -43,5 +43,34 @@ if $run_linker; then
         )
     fi
 fi
+
+# Copied from wasix-clang to strip unsupported linker args
+UNSUPPORTED_LINKER_ARGS=(
+    --end-group
+    --start-group
+    --as-needed
+    --no-as-needed
+    --allow-shlib-undefined
+    --enable-new-dtags
+    # Version script is not supported by wasm-ld
+    "--version-script=*([^,])"
+    "--version-script,*([^,])"
+    # Stats not supported by wasm-ld
+    "*-stats"
+)
+FILTERED_ARGS=( )
+for arg in "${ARGS[@]}"; do
+    # Filter unsupported linker arguments
+    if [[ "$arg" = "-Wl,"* ]]; then
+        for unsupported_linker_arg in "${UNSUPPORTED_LINKER_ARGS[@]}"; do
+            arg="${arg//,$unsupported_linker_arg/}"
+        done
+        [[ "$arg" == "-Wl" ]] && continue || true
+    fi
+
+    # Add all other arguments to our filtered list
+    FILTERED_ARGS+=("$arg")
+done
+
 set -x
-exec "$NATIVE_COMPILER" "${ARGS[@]}"
+exec "$NATIVE_COMPILER" "${FILTERED_ARGS[@]}"
