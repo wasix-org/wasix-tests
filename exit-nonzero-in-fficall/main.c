@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 void exit_with_code(void){
-    exit(4); 
+    printf("FFI call\n");
+    exit(99); 
 }
 
 int main(){
@@ -22,5 +23,5 @@ int main(){
     
     ffi_call(&cif, (void (*)(void))&exit_with_code, NULL, NULL);
 
-    return 0;
+    return 1;
 }

@@ -9,8 +9,8 @@ set +e
 run main
 exitcode=$?
 
-assert_eq "" "$(cat stdout.log)" "stdout did not match expected value"
+assert_eq "FFI call" "$(cat stdout.log)" "stdout did not match expected value"
 assert_eq "" "$(cat stderr.log)" "stderr did not match expected value"
 set -e
 
-assert_eq 4 "$exitcode" "Expected exit code 4 but got $exitcode"
+assert_eq 99 "$exitcode" "Expected exit code 99 but got $exitcode"
