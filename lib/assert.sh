@@ -242,7 +242,7 @@ assert_not_empty() {
   fi
 }
 
-assert_contain() {
+assert_contains() {
   local haystack="$1"
   local needle="${2-}"
   local msg="${3-}"
@@ -273,7 +273,7 @@ assert_contain() {
   return
 }
 
-assert_not_contain() {
+assert_not_contains() {
   local haystack="$1"
   local needle="${2-}"
   local msg="${3-}"

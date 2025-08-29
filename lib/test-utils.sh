@@ -60,12 +60,12 @@ assert_stderr_empty() {
 
 assert_stdout_contains() {
     local expected="$1"
-    assert_contains "$expected" "$(cat stdout.log)" 'stdout did not contain \"$expected\":\\n  stdout: \"$actual\"' 'stdout contains \"$expected\"'
+    assert_contains "$(cat stdout.log)" "$expected" 'stdout did not contain \"$needle\":\\n  stdout: \"$haystack\"' 'stdout contains \"$needle\"'
 }
 
 assert_stderr_contains() {
     local expected="$1"
-    assert_contains "$expected" "$(cat stderr.log)" 'stderr did not contain \"$expected\":\\n  stderr: \"$actual\"' 'stderr contains \"$expected\"'
+    assert_contains "$(cat stderr.log)" "$expected" 'stderr did not contain \"$needle\":\\n  stderr: \"$haystack\"' 'stderr contains \"$needle\"'
 }
 
 assert_exit_code() {
