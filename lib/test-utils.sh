@@ -12,7 +12,31 @@ TEST_NAME=$(realpath -s --relative-to="$GIT_TOPLEVEL" "$TEST_DIR")
 
 source "$LIB_DIR/assert.sh"
 cd "$TEST_DIR"
-trap 'rv=$?; default_error_msg='"'"'Test script failed, see the error above'"'"' ; test "$rv" -eq "0"  || log_failure ; print_report' EXIT
+
+
+exit_hook() {
+    rv=$?
+    default_error_msg='"'"'Test script failed, see the error above'"'"'
+    test "$rv" -eq "0"  || log_failure
+    if print_report ; then
+        return 0
+    else
+        code="$?"
+    fi
+
+    # Print stdout and stderr if the test failed and PRINT_OUTPUT is set
+    if test -n "${PRINT_OUTPUT-}"; then
+        if test -n "$(cat stdout.log)" ; then
+            echo -e "stdout: \n$(cat stdout.log)" || true 
+        fi
+        if test -n "$(cat stderr.log)" ; then
+            echo -e "stderr: \n$(cat stderr.log)" || true 
+        fi
+    fi
+
+    exit 1
+}
+trap 'exit_hook' EXIT
 
 EXIT_CODE=
 
