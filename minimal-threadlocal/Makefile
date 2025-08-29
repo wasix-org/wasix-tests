@@ -4,10 +4,12 @@ CC ?= cc
 CXX ?= c++
 LD ?= cc
 
+all: main
+
 %.o: %.cpp Makefile
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-main.wasm: main.o Makefile
+main: main.o Makefile
 	$(LD) $(LDFLAGS) -o $@ main.o
 
 %.wasm: %.o Makefile

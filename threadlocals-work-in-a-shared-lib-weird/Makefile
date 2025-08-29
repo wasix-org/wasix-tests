@@ -8,7 +8,7 @@ MAIN_LDFLAGS+=-lside
 
 SIDE_LDFLAGS+=-shared
 
-all: main
+all: libside.so main
 
 main: main.o libside.so
 	$(CXX) main.o $(LDFLAGS) $(MAIN_LDFLAGS) -o $@

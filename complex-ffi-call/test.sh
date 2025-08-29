@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source ../lib/test-utils.sh
+source "$(git rev-parse --show-toplevel)/lib/test-utils.sh"
 
 make all
 run main

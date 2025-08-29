@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")"
-source ../lib/assert.sh
-source ../lib/test-utils.sh
+source "$(git rev-parse --show-toplevel)/lib/test-utils.sh"
 
-make main
+make all
 run main
 
-assert_eq "error number: 444" "$(cat stdout.log)" "stdout did not match expected value"
-assert_eq "" "$(cat stderr.log)" "stderr did not match expected value"
-
+assert_success
+assert_stdout_is "error number: 444"
+assert_stderr_empty
