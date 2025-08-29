@@ -5,5 +5,5 @@ make all
 run main
 
 assert_success
-assert_stdout_is "Printing 5, 6, (nil), 42"
+assert_stdout_is "Printing 5, 6, 0, 42"
 assert_stderr_empty
