@@ -12,7 +12,7 @@ TEST_NAME=$(realpath -s --relative-to="$GIT_TOPLEVEL" "$TEST_DIR")
 
 source "$LIB_DIR/assert.sh"
 cd "$TEST_DIR"
-trap "print_report" EXIT
+trap 'rv=$?; default_error_msg='"'"'Test script failed, see the error above'"'"' ; test "$rv" -eq "0"  || log_failure ; print_report' EXIT
 
 EXIT_CODE=
 
@@ -56,6 +56,14 @@ assert_stdout_empty() {
 
 assert_stderr_empty() {
     assert_eq "" "$(cat stderr.log)" 'stderr is not empty:\\n stderr: \"$actual\"' 'stderr is empty$NONE'
+}
+
+assert_stdout_not_empty() {
+    assert_not_eq "" "$(cat stdout.log)" 'stdout is empty but it should contain something' 'stdout is not empty$NONE'
+}
+
+assert_stderr_not_empty() {
+    assert_not_eq "" "$(cat stderr.log)" 'stderr is empty but it should contain something' 'stderr is not empty$NONE'
 }
 
 assert_stdout_contains() {
