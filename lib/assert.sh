@@ -19,6 +19,10 @@
 ##
 #####################################################################
 
+FAILED_ASSERTS=()
+PASSED_ASSERTS=()
+
+
 RED=
 GREEN=
 MAGENTA=
@@ -44,25 +48,116 @@ log_header() {
   printf "\n${BOLD}${MAGENTA}==========  %s  ==========${NORMAL}\n" "$@" >&2
 }
 
+# Empty placeholder varialble in format strings to avoid default
+NONE=
+
+
 log_success() {
-  printf "${GREEN}✔ %s${NORMAL}\n" "$@" >&2
+  local msg="${1:-}"
+  
+  if test -z "$msg"; then
+    MESSAGE="$(eval echo -ne "\"$default_success_msg\"")"
+  elif [[ "$msg" != *'$'* ]]; then
+    MESSAGE="$(eval echo -ne "\"$default_success_msg : $msg\"")"
+  else
+    MESSAGE="$(eval echo -ne "\"$msg\"")"
+  fi
+
+  PASSED_ASSERTS+=( "$MESSAGE" )
 }
 
 log_failure() {
-  printf "${RED}✖ %s${NORMAL}\n" "$@" >&2
+  local msg="${1:-}"
+
+  if test -z "$msg"; then
+    MESSAGE="$(eval echo -ne "\"$default_error_msg\"")"
+  elif [[ "$msg" != *'$'* ]]; then
+    MESSAGE="$(eval echo -ne "\"$default_error_msg : $msg\"")"
+  else
+    MESSAGE="$(eval echo -ne "\"$msg\"")"
+  fi
+
+  FAILED_ASSERTS+=( "$MESSAGE" )
 }
 
+print_report() {
+  PASSED_FORMAT="${GREEN}✔ %s${NORMAL}"
+  FAILED_FORMAT="${RED}✘ %s${NORMAL}"
+
+  local total=$(( ${#PASSED_ASSERTS[@]} + ${#FAILED_ASSERTS[@]} ))
+
+  if [ "${#FAILED_ASSERTS[@]}" -gt 0 ]; then
+    log_header "FAILED ASSERTS"
+    for msg in "${FAILED_ASSERTS[@]}"; do
+      printf "$FAILED_FORMAT\n" "$(echo -ne "$msg" | sed -z 's/\n/\n  /g')" >&2
+    done
+  fi
+
+  if [ "${#PASSED_ASSERTS[@]}" -gt 0 ]; then
+    log_header "PASSED ASSERTS"
+    for msg in "${PASSED_ASSERTS[@]}"; do
+      printf "$PASSED_FORMAT\n" "$(echo -ne "$msg" | sed -z 's/\n/\n  /g')" >&2
+    done
+  fi
+
+  log_header "SUMMARY"
+  printf "${BOLD}Total: %d, Passed: %d, Failed: %d${NORMAL}\n" "$total" "${#PASSED_ASSERTS[@]}" "${#FAILED_ASSERTS[@]}" >&2
+
+  if [ "${#FAILED_ASSERTS[@]}" -gt 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+checkpoint() {
+  if [ "${#FAILED_ASSERTS[@]}" -gt 0 ]; then
+    print_report
+    return 1
+  fi
+}
+
+_assert_msg() {
+  local default_error_msg='assertion failed'
+
+  local failed=false
+  if eval echo "$msg" > /dev/null ; then
+    return
+  else
+    local previous_message="$msg"
+    local msg=""
+    local msg=
+    log_failure 'Your assert message is not valid: \"$previous_message\"'
+    failed=true
+  fi
+  
+  if eval echo "$success_msg" > /dev/null ; then
+    return
+  else
+    local previous_success_message="$success_msg"
+    local success_msg=""
+    local success_msg=
+    log_failure 'Your assert message is not valid: \"$previous_success_message\"'
+    failed=true
+  fi
+
+  "$failed" && return 1 || return 0
+}
 
 assert_eq() {
   local expected="$1"
   local actual="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  local default_success_msg='\"$expected\" == \"$actual\"'
+  local default_error_msg='\"$expected\" != \"$actual\"'
 
   if [ "$expected" == "$actual" ]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$expected == $actual :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
 
@@ -70,156 +165,157 @@ assert_not_eq() {
   local expected="$1"
   local actual="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  local default_success_msg='\"$expected\" != \"$actual\"'
+  local default_error_msg='\"$expected\" == \"$actual\"'
 
   if [ ! "$expected" == "$actual" ]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$expected != $actual :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
 
 assert_true() {
   local actual="$1"
   local msg="${2-}"
+  local success_msg="${3-}"
+  _assert_msg || return 1
 
-  assert_eq true "$actual" "$msg"
-  return "$?"
+  local default_success_msg='$actual is true'
+  local default_error_msg='\"$actual\" is not true'
+
+  if [ ! true == "$actual" ]; then
+    log_success "$success_msg"
+  else
+    log_failure "$msg"
+  fi
 }
 
 assert_false() {
   local actual="$1"
   local msg="${2-}"
+  local success_msg="${3-}"
+  _assert_msg || return 1
 
-  assert_eq false "$actual" "$msg"
-  return "$?"
-}
+  local default_success_msg='$actual is false'
+  local default_error_msg='$expected is not false'
 
-assert_array_eq() {
-
-  declare -a expected=("${!1-}")
-  # echo "AAE ${expected[@]}"
-
-  declare -a actual=("${!2}")
-  # echo "AAE ${actual[@]}"
-
-  local msg="${3-}"
-
-  local return_code=0
-  if [ ! "${#expected[@]}" == "${#actual[@]}" ]; then
-    return_code=1
+  if [ ! false == "$actual" ]; then
+    log_success "$success_msg"
+  else
+    log_failure "$msg"
   fi
-
-  local i
-  for (( i=1; i < ${#expected[@]} + 1; i+=1 )); do
-    if [ ! "${expected[$i-1]}" == "${actual[$i-1]}" ]; then
-      return_code=1
-      break
-    fi
-  done
-
-  if [ "$return_code" == 1 ]; then
-    [ "${#msg}" -gt 0 ] && log_failure "(${expected[*]}) != (${actual[*]}) :: $msg" || true
-  fi
-
-  return "$return_code"
-}
-
-assert_array_not_eq() {
-
-  declare -a expected=("${!1-}")
-  declare -a actual=("${!2}")
-
-  local msg="${3-}"
-
-  local return_code=1
-  if [ ! "${#expected[@]}" == "${#actual[@]}" ]; then
-    return_code=0
-  fi
-
-  local i
-  for (( i=1; i < ${#expected[@]} + 1; i+=1 )); do
-    if [ ! "${expected[$i-1]}" == "${actual[$i-1]}" ]; then
-      return_code=0
-      break
-    fi
-  done
-
-  if [ "$return_code" == 1 ]; then
-    [ "${#msg}" -gt 0 ] && log_failure "(${expected[*]}) == (${actual[*]}) :: $msg" || true
-  fi
-
-  return "$return_code"
 }
 
 assert_empty() {
   local actual=$1
   local msg="${2-}"
+  local success_msg="${3-}"
+  _assert_msg || return 1
 
-  assert_eq "" "$actual" "$msg"
-  return "$?"
+  local default_success_msg='\"$actual\" is empty'
+  local default_error_msg='\"$actual\" is not empty'
+
+  if test -z "$actual" ; then
+    log_success "$success_msg"
+  else
+    log_failure "$msg"
+  fi
 }
 
 assert_not_empty() {
   local actual=$1
   local msg="${2-}"
+  local success_msg="${3-}"
+  _assert_msg || return 1
 
-  assert_not_eq "" "$actual" "$msg"
-  return "$?"
+  local default_success_msg='\"$actual\" is not empty'
+  local default_error_msg='\"$actual\" is empty'
+
+  if test -n "$actual" ; then
+    log_success "$success_msg"
+  else
+    log_failure "$msg"
+  fi
 }
 
 assert_contain() {
   local haystack="$1"
   local needle="${2-}"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  local default_success_msg='\"$haystack\" contains \"$needle\"'
+  local default_error_msg='\"$haystack\" does not contain \"$needle\"'
 
   if [ -z "${needle:+x}" ]; then
-    return 0;
+    local default_success_msg='Everything contains nothing'
+    log_success "$success_msg"
+    return
   fi
 
   if [ -z "$haystack" ]; then
-    return 1;
+    local default_error_msg='Nothing contains nothing but nothing'
+    log_failure "$msg"
+    return
   fi
 
   if grep -q "$needle" <<< "$haystack"; then
-    return 0
-  else
-    [ "${#msg}" -gt 0 ] && log_failure "$haystack doesn't contain $needle :: $msg" || true
-    return 1
+    log_success "$success_msg"
+    return
   fi
+
+  log_failure "$msg"
+  return
 }
 
 assert_not_contain() {
   local haystack="$1"
   local needle="${2-}"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  local default_success_msg='\"$haystack\" does not contain \"$needle\"'
+  local default_error_msg='\"$haystack\" contains \"$needle\"'
 
   if [ -z "${needle:+x}" ]; then
-    return 0;
+    log_failure "$msg"
+    return
   fi
 
   if [ -z "$haystack" ]; then
-    return 0;
+    log_success "$success_msg"
+    return
   fi
 
   if [ "${haystack##*$needle*}" ]; then
-    return 0
-  else
-    [ "${#msg}" -gt 0 ] && log_failure "$haystack contains $needle :: $msg" || true
-    return 1
+    log_success "$success_msg"
+    return
   fi
+
+  log_failure "$msg"
+  return
 }
 
 assert_gt() {
   local first="$1"
   local second="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  default_success_msg='$first > $second'
+  default_error_msg='$first is not > $second'
 
   if [[ "$first" -gt  "$second" ]]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$first > $second :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
 
@@ -227,12 +323,16 @@ assert_ge() {
   local first="$1"
   local second="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  default_success_msg='$first >= $second'
+  default_error_msg='$first is not >= $second'
 
   if [[ "$first" -ge  "$second" ]]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$first >= $second :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
 
@@ -240,12 +340,16 @@ assert_lt() {
   local first="$1"
   local second="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  default_success_msg='$first < $second'
+  default_error_msg='$first is not < $second'
 
   if [[ "$first" -lt  "$second" ]]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$first < $second :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
 
@@ -253,11 +357,15 @@ assert_le() {
   local first="$1"
   local second="$2"
   local msg="${3-}"
+  local success_msg="${4-}"
+  _assert_msg || return 1
+
+  default_success_msg='$first <= $second'
+  default_error_msg='$first is not <= $second'
 
   if [[ "$first" -le  "$second" ]]; then
-    return 0
+    log_success "$success_msg"
   else
-    [ "${#msg}" -gt 0 ] && log_failure "$first <= $second :: $msg" || true
-    return 1
+    log_failure "$msg"
   fi
 }
