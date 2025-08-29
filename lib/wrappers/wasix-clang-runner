@@ -8,6 +8,9 @@ if ! command -v "$RUNNER" &>/dev/null; then
 fi
 
 LIB_PATH=$(dirname "$(realpath "$1")")
+if test -d "$LIB_PATH/lib" ; then
+    LIB_PATH="$LIB_PATH/lib"
+fi
 
 ARGS=("$@")
 if test "1" = "${LLVM_DEBUG:-}"; then

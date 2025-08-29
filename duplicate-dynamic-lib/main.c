@@ -4,12 +4,12 @@
 #include <stdio.h>
 
 int main() {
-	void* handle_a = dlopen("./a/libside.so", RTLD_NOW);
+	void* handle_a = dlopen("./lib/a/libside.so", RTLD_NOW);
 	if (!handle_a) {
 		printf("dlopen a/libside.so failed: %s\n", dlerror());
 		return 1;
 	}
-	void* handle_b = dlopen("./b/libside.so", RTLD_NOW);
+	void* handle_b = dlopen("./lib/b/libside.so", RTLD_NOW);
 	if (!handle_b) {
 		printf("dlopen b/libside.so failed: %s\n", dlerror());
 		return 1;
