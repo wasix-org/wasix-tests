@@ -19,12 +19,29 @@ disabled_tests=("minimal-threadlocal" "extern-threadlocal-nopic")
 available_tests=()
 enabled_tests=()
 
+available_test_grids=()
+
 selected_tests=( )
 use_only_selected_tests=false
 
-for t in ./*/test.sh; do
+for t in ./*/test-grid.sh; do
     dir=$(dirname "$t")
-    name=$(basename "$dir")
+    name=$( echo "$dir" | sed 's|^\./||' | sed 's|^/||' | sed 's|/$||' )
+    available_test_grids+=("$name")
+done
+
+for t in "${available_test_grids[@]}"; do
+    # TODO: Only regenerate if necessary if this becomes a bottleneck
+    bash ./"$t"/test-grid.sh
+done
+
+for t in ./*/test.sh ./*/*/test.sh; do
+    dir=$(dirname "$t")
+    name=$( echo "$dir" | sed 's|^\./||' | sed 's|^/||' | sed 's|/$||' )
+    if test -f $dir/.template || test "template" = "$(basename "$dir")"; then
+        # Only a template, skip
+        continue
+    fi
     available_tests+=("$name")
 done
 
@@ -85,7 +102,7 @@ for tool in "${selected_tools[@]}"; do
     for test in "${selected_tests[@]}"; do
         testfile="./$test/test.sh"
         testdir=$(dirname "$testfile")
-        testname=$(basename "$testdir")
+        testname=$( echo "$testdir" | sed 's|^\./||' | sed 's|^/||' | sed 's|/$||' )
 
         ((current_step+=1))
         draw_progress "$current_step" "$total_steps"
