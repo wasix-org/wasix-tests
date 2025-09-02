@@ -65,4 +65,4 @@ Sometimes you want to test a grid of multiple properties. For this simple test g
 
 Create a test folder, but add a `test-grid.sh` instead of a `test.sh`. The `test-grid.sh` is expected to create test folders in the folder where it is located. Usually this is done by having one template test folder and copying that with slight modifications to real test folders. Name your template test folder `template` or add a `.template` file to your template test folder, to prevent it from beeing discovered as a test itself.
 
-Keep in mind that test grids are currently regenerated every time the test runner is executed. This means you shouldn't put any valuable files in there.
+Keep in mind that test grids are only regenerated when you pass `regenerate-grids` to the test runnes.

@@ -20,6 +20,7 @@ available_tests=()
 enabled_tests=()
 
 available_test_grids=()
+regenerate_grids=false
 
 selected_tests=( )
 use_only_selected_tests=false
@@ -34,6 +35,17 @@ for t in "${available_test_grids[@]}"; do
     # TODO: Only regenerate if necessary if this becomes a bottleneck
     bash ./"$t"/test-grid.sh
 done
+for test in "$@"; do
+    if [[ "regenerate-grids" =~ $test  ]] ; then 
+        regenerate_grids=true
+    fi
+done
+# Regenerate test grids if requested
+if [[ $regenerate_grids == true ]]; then
+    for t in "${available_test_grids[@]}"; do
+        bash ./"$t"/test-grid.sh
+    done
+fi
 
 for t in ./*/test.sh ./*/*/test.sh; do
     dir=$(dirname "$t")
@@ -53,6 +65,10 @@ for name in "${available_tests[@]}"; do
 done
 
 for test in "$@"; do
+    if [[ "regenerate-grids" =~ $test  ]] ; then 
+        # Handled before detection of tests
+        continue
+    fi
     if [[ ${available_tools[@]} =~ $test  ]] ; then 
         selected_tools+=("$test")
         continue
