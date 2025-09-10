@@ -19,4 +19,4 @@ if test "1" = "${LLVM_DEBUG:-}"; then
     )
 fi
 
-exec "${RUNNER}" run --mapdir /lib:"$LIB_PATH" --llvm "$ARGS"
+exec "${RUNNER}" run --mapdir /lib:"$LIB_PATH" --dir . --llvm "$ARGS"
