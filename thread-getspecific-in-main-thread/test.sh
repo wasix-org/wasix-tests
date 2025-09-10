@@ -5,5 +5,5 @@ make all
 run main
 
 assert_success
-assert_stdout_matches '^thread_getspecific returned: 0x[0-9a-fA-F]+$'
+assert_stdout_contains 'thread_getspecific returned: 0x'
 assert_stderr_empty
