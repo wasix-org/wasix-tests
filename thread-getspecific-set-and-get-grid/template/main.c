@@ -16,7 +16,7 @@
 pthread_key_t key_a;
 pthread_key_t key_b;
 
-void run_test() {
+void* run_test(void *data) {
     // Set thread specific data
 #if defined(SET_DATA_PROXY_DYNAMIC)
     void* handle_set_data_proxy = dlopen("./libset-data-proxy.so", RTLD_LAZY);
@@ -61,7 +61,29 @@ int main() {
     assert(res == 0);
     assert(pthread_getspecific(key_b) == NULL);
 
-    run_test();
+#if defined(THREAD_WORKER)
+    pthread_attr_t attr = {0};
+    if (pthread_attr_init(&attr) != 0) {
+        perror("init attr");
+        return -1;
+    }
+
+    pthread_t thread = {0};
+    if (pthread_create(&thread, &attr, &run_test, (void *)stdout) != 0) {
+        perror("create thread");
+        return -1;
+    }
+
+    void *thread_ret;
+    if (pthread_join(thread, &thread_ret) != 0) {
+        perror("join");
+        return -1;
+    }
+#elif defined(THREAD_MAIN)
+    run_test(NULL);
+#else
+#error "You need to define one of THREAD_MAIN or THREAD_WORKER"
+#endif
 
     pthread_key_delete(key_a);
     pthread_key_delete(key_b);
