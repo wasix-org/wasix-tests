@@ -31,10 +31,6 @@ for t in ./*/test-grid.sh; do
     available_test_grids+=("$name")
 done
 
-for t in "${available_test_grids[@]}"; do
-    # TODO: Only regenerate if necessary if this becomes a bottleneck
-    bash ./"$t"/test-grid.sh
-done
 for test in "$@"; do
     if [[ "regenerate-grids" =~ $test  ]] ; then 
         regenerate_grids=true
