@@ -18,7 +18,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install WASIX toolchain
         run: |
-          bash lib/setup-wasix.sh
+          sudo apt update > /dev/null
+          sudo apt install -y clang llvm git git-lfs build-essential make cmake libtool pkg-config yq expect > /dev/null
+
+          curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
       - name: Run tests
         run: |
           source ~/.wasix-clang/activate
