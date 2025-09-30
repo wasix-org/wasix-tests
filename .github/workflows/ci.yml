@@ -21,15 +21,14 @@ jobs:
           bash lib/setup-wasix.sh
       - name: Run tests
         run: |
-          export WASIX_SYSROOT=/wasix-sysroot
-          export WASMER=/usr/bin/wasmer
-          export TERM=xterm-256color
+          source ~/.wasix-clang/activate
           bash test.sh | tee test.log
       - name: Summarize test results
         run: |
           bash lib/summarize-test-results-for-ci.sh
       - name: Post test results to PR
         uses: actions/github-script@v7
+        if: github.event.pull_request.base.ref == 'master'
         with:
           script: |
             const fs = require('fs');
