@@ -1,0 +1,26 @@
+#!/usr/bin/expect -f
+set timeout 15
+
+# Weird dance to make it exit non-zero on segfault
+set cmd [list bash -c "echo [lrange $argv 0 end] | bash" ]
+eval spawn $cmd
+
+proc expect_or_fail {pattern} {
+    expect {
+        $pattern {}
+        timeout  { puts "Timeout waiting for '$pattern'"; exit 1 }
+        eof      { puts "Process ended too early"; exit 1 }
+    }
+}
+
+expect_or_fail "Unlinking nullptr"
+expect_or_fail eof
+
+set result [wait]
+set exit_status [lindex $result 3]
+if {$exit_status == 0} {
+    puts "Expected non-zero exit status"
+    exit 1
+} else {
+    exit 0
+}

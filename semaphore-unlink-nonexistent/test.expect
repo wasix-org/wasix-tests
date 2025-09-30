@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 15
+# We need to use expect to be able to write to /dev/tty
+
+set cmd [lrange $argv 0 end]
+eval spawn $cmd
+
+proc expect_or_fail {pattern} {
+    expect {
+        $pattern {}
+        timeout  { puts "Timeout waiting for '$pattern'"; exit 1 }
+        eof      { puts "Process ended too early"; exit 1 }
+    }
+}
+
+expect_or_fail "Unlinking nonexistent semaphore"
+expect_or_fail "done."
+
+set result [wait]
+set exit_status [lindex $result 3]
+exit $exit_status
