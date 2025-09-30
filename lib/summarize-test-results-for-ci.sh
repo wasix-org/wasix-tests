@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euox pipefail
 
 summary=$(tail -n 1 test.log | sed -r 's/\x1b\[[0-9;]*m//g')
 failed="$(grep -Po "failed: [a-zA-Z-]+ [(][a-zA-Z-]+[)]" test.log | sed -r 's/failed: /- /g')"

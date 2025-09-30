@@ -25,10 +25,10 @@ jobs:
       - name: Run tests
         run: |
           source ~/.wasix-clang/activate
-          bash test.sh | tee test.log
+          bash test.sh exit-* | tee test.log
       - name: Summarize test results
         run: |
-          bash lib/summarize-test-results-for-ci.sh
+          bash -x lib/summarize-test-results-for-ci.sh
       - name: Post test results to PR
         uses: actions/github-script@v7
         if: github.event.pull_request.base.ref == 'master'
