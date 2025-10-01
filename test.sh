@@ -129,8 +129,6 @@ for tool in "${selected_tools[@]}"; do
 done
 
 echo >&2
-echo done1
-echo done2 >&2
 
 if [[ $failed -eq 0 ]]; then
     echo -e "${GREEN}✅ ${passed} passed${NORMAL}"

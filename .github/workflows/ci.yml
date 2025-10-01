@@ -25,7 +25,7 @@ jobs:
       - name: Run tests
         run: |
           source ~/.wasix-clang/activate
-          bash test.sh exit-* | tee test.log
+          bash test.sh | tee test.log
       - name: Summarize test results
         run: |
           bash -x lib/summarize-test-results-for-ci.sh

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euox pipefail
+set -euo pipefail
 
 summary=$(tail -n 1 test.log | sed -r 's/\x1b\[[0-9;]*m//g')
 failed="$(grep -Po "failed: [a-zA-Z-]+ [(][a-zA-Z-]+[)]" test.log | sed -r 's/failed: /- /g')"
@@ -33,3 +33,4 @@ EOF
 fi
 
 cat pr_comment.txt >> "${GITHUB_STEP_SUMMARY}"
+cat pr_comment.txt
